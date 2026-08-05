@@ -1,8 +1,6 @@
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
-![License](https://img.shields.io/github/license/USERNAME/Zenith)
-![Release](https://img.shields.io/github/v/release/USERNAME/Zenith)
-![Downloads](https://img.shields.io/github/downloads/USERNAME/Zenith/total)
+
 
 # ⚡ Zenith Browser
 
