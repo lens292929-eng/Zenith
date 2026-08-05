@@ -144,14 +144,7 @@ Future ideas:
 
 ## 📸 Screenshots
 
-_Add screenshots here_
-
----
-
-## 📜 License
-
-_Add your preferred license here_
-
+<img src="zenith.png">
 ---
 
 <p align="center">
