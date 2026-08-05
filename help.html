@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zenith Browser Help & Manual</title>
+
+<style>
+:root {
+    --bg: #1b1b1f;
+    --card: #24242a;
+    --border: rgba(255, 255, 255, .08);
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --text: #f2f2f2;
+    --muted: #b3b3b8;
+    --code-bg: #141416;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    padding: 60px 20px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-size: 18px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 24px;
+}
+
+h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+p {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 16px;
+}
+
+/* Keyboard Shortcut Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+th {
+    color: var(--text);
+    font-weight: 600;
+}
+
+td {
+    color: var(--muted);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+kbd {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+
+/* Feature Grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.grid-item {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.grid-item h3 {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.grid-item p {
+    font-size: 13px;
+    margin-bottom: 0;
+}
+
+.badge {
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Zenith Help & Documentation</h1>
+    <p class="subtitle">Keyboard shortcuts, search engine prefixes, extensions, and profile guide.</p>
+
+    <!-- Quick Navigation & Command Palette -->
+    <div class="card">
+        <h2>⚡ Navigation & Command Palette</h2>
+        <p>Use Zenith's built-in overlays for fast keyboard-driven browsing without leaving your context.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Shortcut</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Open Command Palette</strong></td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></td>
+                    <td>Access quick commands, toggle dark mode, or run cleanups.</td>
+                </tr>
+                <tr>
+                    <td><strong>Spotlight Search Bar</strong></td>
+                    <td><kbd>Ctrl</kbd> + <kbd>L</kbd> / <kbd>Ctrl</kbd> + <kbd>K</kbd> / <kbd>Alt</kbd> + <kbd>T</kbd></td>
+                    <td>Open the central URL and search engine overlay.</td>
+                </tr>
+                <tr>
+                    <td><strong>Ad Blocker Popup</strong></td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td>
+                    <td>View ad/tracker stats and switch protection modes.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Search Engine Prefixes -->
+    <div class="card">
+        <h2>🔍 Search Engine Prefixes</h2>
+        <p>Type any prefix followed by your query in the Spotlight Search Bar to target specific search providers directly.</p>
+        <div class="grid">
+            <div class="grid-item">
+                <h3><code>g &lt;query&gt;</code></h3>
+                <p>Search using <strong>Google</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>d &lt;query&gt;</code></h3>
+                <p>Search using <strong>DuckDuckGo</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>b &lt;query&gt;</code></h3>
+                <p>Search using <strong>Brave Search</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>k &lt;query&gt;</code></h3>
+                <p>Search using <strong>Kagi</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>gh &lt;query&gt;</code></h3>
+                <p>Search repositories on <strong>GitHub</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>yt &lt;query&gt;</code></h3>
+                <p>Search videos on <strong>YouTube</strong></p>
+            </div>
+            <div class="grid-item">
+                <h3><code>r &lt;query&gt;</code></h3>
+                <p>Search threads on <strong>Reddit</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Essential Shortcuts -->
+    <div class="card">
+        <h2>⌨️ Essential Keyboard Shortcuts</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Shortcut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>New Tab</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
+                </tr>
+                <tr>
+                    <td>Close Current Tab</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>W</kbd></td>
+                </tr>
+                <tr>
+                    <td>Reopen Closed Tab</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
+                </tr>
+                <tr>
+                    <td>Restore Previous Session</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td>
+                </tr>
+                <tr>
+                    <td>Switch Tabs (Next / Previous)</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+                </tr>
+                <tr>
+                    <td>Switch to Tab # (1–8)</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>1</kbd> to <kbd>8</kbd></td>
+                </tr>
+                <tr>
+                    <td>Back / Forward</td>
+                    <td><kbd>Alt</kbd> + <kbd>Left</kbd> / <kbd>Alt</kbd> + <kbd>Right</kbd></td>
+                </tr>
+                <tr>
+                    <td>Reload Page / Hard Reload</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>R</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd></td>
+                </tr>
+                <tr>
+                    <td>Open Downloads Manager</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>J</kbd></td>
+                </tr>
+                <tr>
+                    <td>Open Preferences / Settings</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>,</kbd></td>
+                </tr>
+                <tr>
+                    <td>Bookmark Current Page / All Tabs</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>D</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td>
+                </tr>
+                <tr>
+                    <td>Inspect Element (DevTools)</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></td>
+                </tr>
+                <tr>
+                    <td>Toggle Reader Mode</td>
+                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Extensions & Features -->
+    <div class="card">
+        <h2>🧩 Integrated Extensions</h2>
+        <p>Zenith features built-in modular extensions customizable from <strong>Settings (<kbd>Ctrl</kbd> + <kbd>,</kbd>)</strong>.</p>
+        <div class="grid">
+            <div class="grid-item">
+                <h3>YouTube Shorts Blocker</h3>
+                <p>Redirects Shorts to normal watch pages and strips short shelf UI clutter.</p>
+            </div>
+            <div class="grid-item">
+                <h3>Dark Reader Lite</h3>
+                <p>Forces a high-contrast dark theme onto bright websites.</p>
+            </div>
+            <div class="grid-item">
+                <h3>Distraction-Free Reader Mode</h3>
+                <p>Strips web ads and navigation menus to focus purely on article content.</p>
+            </div>
+            <div class="grid-item">
+                <h3>Cookie & Storage Cleaner</h3>
+                <p>One-click instant wipe of HTTP cache, cookies, and session data for privacy.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
