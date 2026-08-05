@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<title>Zenith</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+
+    --bg:#18181b;
+    --card:#242428;
+    --border:#35353d;
+    --accent:#6D63FF;
+
+    --text:#f4f4f5;
+    --muted:#8b8b94;
+
+}
+
+body{
+
+    background:var(--bg);
+
+    color:var(--text);
+
+    font-family:"Segoe UI",sans-serif;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+
+}
+
+.container{
+
+    width:100%;
+
+    max-width:760px;
+
+    padding:32px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+}
+
+.logo{
+
+    width:90px;
+
+    margin-bottom:12px;
+
+    user-select:none;
+
+}
+
+.sine-title{
+
+    display:flex;
+
+    align-items:center;
+
+    height:120px;
+
+}
+
+.sine-title span{
+
+    font-family:"Outfit",sans-serif;
+
+    font-size:82px;
+
+    font-weight:800;
+
+    animation:sine 2.5s ease-in-out infinite alternate;
+
+    animation-delay:calc(var(--i) * -.25s);
+
+    text-shadow:0 8px 18px rgba(0,0,0,.35);
+
+}
+
+@keyframes sine{
+
+from{
+
+    transform:translateY(-18px) rotate(-6deg);
+
+}
+
+to{
+
+    transform:translateY(18px) rotate(6deg);
+
+}
+
+}
+
+.hero{
+
+    margin-top:22px;
+
+    width:100%;
+
+    max-width:560px;
+
+    background:linear-gradient(180deg,#28282d,#222226);
+
+    border:1px solid var(--border);
+
+    border-radius:26px;
+
+    padding:34px;
+
+    text-align:center;
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.35),
+        inset 0 1px rgba(255,255,255,.03);
+
+}
+
+.command{
+
+    font-family:Consolas,monospace;
+
+    font-size:28px;
+
+    color:#d9d9df;
+
+    height:38px;
+
+    margin-bottom:20px;
+
+}
+
+.cursor{
+
+    animation:blink .9s infinite;
+
+}
+
+@keyframes blink{
+
+50%{
+
+    opacity:0;
+
+}
+
+}
+
+.hero h2{
+
+    font-size:34px;
+
+    margin-bottom:10px;
+
+    font-weight:600;
+
+}
+
+.hero p{
+
+    color:var(--muted);
+
+    line-height:1.7;
+
+}
+
+.shortcuts{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:18px;
+
+    margin-top:34px;
+
+    flex-wrap:wrap;
+
+}
+
+.shortcut{
+
+    width:160px;
+
+    padding:18px;
+
+    background:#232327;
+
+    border:1px solid #35353d;
+
+    border-radius:18px;
+
+    transition:.18s;
+
+}
+
+.shortcut:hover{
+
+    transform:translateY(-2px);
+
+    border-color:var(--accent);
+
+}
+
+.shortcut-title{
+
+    margin-top:12px;
+
+    color:var(--muted);
+
+    font-size:14px;
+
+}
+
+kbd{
+
+    background:#31313a;
+
+    border:1px solid #44444f;
+
+    border-radius:8px;
+
+    padding:4px 8px;
+
+    font-size:14px;
+
+}
+
+.help{
+
+    margin-top:34px;
+
+    color:var(--muted);
+
+    text-align:center;
+
+    line-height:2;
+
+}
+
+.footer{
+
+    margin-top:26px;
+
+    color:#666;
+
+    font-size:13px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png"
+     class="logo"
+     onerror="this.style.display='none'">
+
+<h1 class="sine-title">
+
+<span style="--i:1">Z</span>
+<span style="--i:2">e</span>
+<span style="--i:3">n</span>
+<span style="--i:4">i</span>
+<span style="--i:5">t</span>
+<span style="--i:6">h</span>
+
+</h1>
+
+<div class="hero">
+
+<div class="command">
+⌕ <span id="typing"></span><span class="cursor">|</span>
+</div>
+
+<h2>Keyboard-first browsing.</h2>
+
+<p>
+
+Open Spotlight to search the web, visit websites,
+or use search prefixes like <strong>gh</strong>,
+<strong>yt</strong>, and <strong>r</strong>.
+
+</p>
+
+</div>
+
+<div class="shortcuts">
+
+<div class="shortcut">
+
+<kbd>Alt</kbd> + <kbd>T</kbd>
+
+<div class="shortcut-title">
+
+Spotlight
+
+</div>
+
+</div>
+
+<div class="shortcut">
+
+<kbd>Ctrl</kbd> + <kbd>K</kbd>
+
+<div class="shortcut-title">
+
+Quick Search
+
+</div>
+
+</div>
+
+<div class="shortcut">
+
+<kbd>Ctrl</kbd> + <kbd>H</kbd>
+
+<div class="shortcut-title">
+
+Help
+
+</div>
+
+</div>
+
+</div>
+
+<div class="help">
+
+Press <kbd>Alt</kbd> + <kbd>T</kbd> to start searching.<br>
+
+Everything begins with Spotlight.
+
+</div>
+
+<div class="footer">
+
+Zenith Browser
+
+</div>
+
+</div>
+
+<script>
+
+const examples=[
+
+"gh pyqt6",
+
+"yt lofi mix",
+
+"r linux",
+
+"g weather tomorrow",
+
+"chat.openai.com",
+
+"github.com",
+
+"stackoverflow.com",
+
+"d privacy browser"
+
+];
+
+const typing=document.getElementById("typing");
+
+let example=0;
+
+let index=0;
+
+let deleting=false;
+
+function animate(){
+
+    const text=examples[example];
+
+    if(!deleting){
+
+        typing.textContent=text.substring(0,index++);
+
+        if(index>text.length){
+
+            deleting=true;
+
+            setTimeout(animate,1200);
+
+            return;
+
+        }
+
+    }else{
+
+        typing.textContent=text.substring(0,index--);
+
+        if(index<0){
+
+            deleting=false;
+
+            example=(example+1)%examples.length;
+
+        }
+
+    }
+
+    setTimeout(animate,deleting?35:65);
+
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
