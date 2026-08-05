@@ -9,8 +9,6 @@
 </p>
 
 ---
-
-## !!! WARNING !!!
 ## Windows Defender warning
 
 Some antivirus programs may warn about Zenith because it is a new, unsigned application packaged with PyInstaller. This is a false positive.
