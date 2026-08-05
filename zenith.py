@@ -5,6 +5,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from PyQt6.QtCore import (
@@ -24,6 +25,7 @@ from PyQt6.QtCore import (
     Qt,
     pyqtProperty,
     pyqtSignal,
+    pyqtSlot,
 )
 from PyQt6.QtGui import (
     QAction,
@@ -50,6 +52,7 @@ from PyQt6.QtWebEngineCore import (
     QWebEngineScript,
     QWebEngineUrlRequestInfo,
     QWebEngineUrlRequestInterceptor,
+    QWebEngineSettings,
 )
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
@@ -72,6 +75,7 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollBar,
+    QSlider,
     QStackedWidget,
     QStyleOptionSlider,
     QTableWidget,
@@ -80,6 +84,10 @@ from PyQt6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QCheckBox,
+    QDial,
+    QGridLayout,
+    QColorDialog,
 )
 
 # ==========================================
@@ -88,9 +96,13 @@ from PyQt6.QtWidgets import (
 
 WINDOW_TITLE = "Zenith Browser"
 DEFAULT_WINDOW_SIZE = QSize(1200, 750)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-HOME_PAGE_FILE = os.path.join(BASE_DIR, "pages", "home.html")
-HELP_PAGE_FILE = os.path.join(BASE_DIR, "pages", "help.html")
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).parent
+
+HOME_PAGE_FILE = BASE_DIR / "pages" / "home.html"
+HELP_PAGE_FILE = BASE_DIR / "pages" / "help.html"
 
 DEFAULT_ENGINE = "duckduckgo"
 
@@ -212,6 +224,9 @@ class BrowserDataManager:
     def load_history(self) -> List[Dict]:
         return self._read_json("History.json", [])
 
+    def save_history(self, history: List[Dict]) -> None:
+        self._write_json("History.json", history)
+
     def add_history_entry(self, title: str, url: str) -> None:
         if not url or url.startswith("about:") or url.startswith("chrome:"):
             return
@@ -258,7 +273,71 @@ class BrowserDataManager:
             "zoom_level": 1.0,
             "ad_blocker_mode": "Balanced",
             "restore_session": True,
-            "enabled_extensions": ["shorts_blocker", "inspect_element", "quick_commands"]
+            "enabled_extensions": ["shorts_blocker", "inspect_element", "quick_commands"],
+            "themes": {
+                "Zenith": {
+                    "accent_color": "#6366F1",
+                    "background_color": "#18181B",
+                    "text_color": "#F4F4F5",
+                    "toolbar_color": "#1F1B24",
+                },
+                "Solar Flare": {
+                    "accent_color": "#FF6B6B",
+                    "background_color": "#1E1B2A",
+                    "text_color": "#F8F0E3",
+                    "toolbar_color": "#3C2F41",
+                },
+                "Forest Whisper": {
+                    "accent_color": "#6DC066",
+                    "background_color": "#122112",
+                    "text_color": "#D9E4D4",
+                    "toolbar_color": "#24342A",
+                },
+                "Ocean Depths": {
+                    "accent_color": "#42A5F5",
+                    "background_color": "#0F1F2E",
+                    "text_color": "#E9F4FF",
+                    "toolbar_color": "#1E3346",
+                },
+                "Dawn Blush": {
+                    "accent_color": "#FF9F80",
+                    "background_color": "#2C1E28",
+                    "text_color": "#FFF0E8",
+                    "toolbar_color": "#412A38",
+                },
+                "Cyberpunk": {
+                    "accent_color": "#F500A0",
+                    "background_color": "#0C0815",
+                    "text_color": "#E1D7FF",
+                    "toolbar_color": "#221336",
+                },
+                "Stone": {
+                    "accent_color": "#8A8A8A",
+                    "background_color": "#161616",
+                    "text_color": "#E6E6E6",
+                    "toolbar_color": "#252525",
+                },
+                "Desert Breeze": {
+                    "accent_color": "#D18E4A",
+                    "background_color": "#2F271F",
+                    "text_color": "#F6E7D0",
+                    "toolbar_color": "#40332C",
+                },
+                "Aurora": {
+                    "accent_color": "#4DD0E1",
+                    "background_color": "#101A25",
+                    "text_color": "#D8F2FA",
+                    "toolbar_color": "#1B3542",
+                },
+                "Monochrome": {
+                    "accent_color": "#FFFFFF",
+                    "background_color": "#121212",
+                    "text_color": "#E5E5E5",
+                    "toolbar_color": "#1E1E1E",
+                },
+            },
+            "active_theme": "Zenith",
+            "permissions": {},
         }
         loaded = self._read_json("Settings.json", {})
         defaults.update(loaded)
@@ -352,7 +431,18 @@ class ProfileManager:
             QWebEngineProfile.PersistentCookiesPolicy.AllowPersistentCookies
         )
         self.web_engine_profile.setCachePath(profile.get_cache_path())
-        self.web_engine_profile.setDownloadPath(profile.get_downloads_path())
+        # Use the user's Downloads folder as the default download directory
+        downloads_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
+        if not downloads_dir:
+            downloads_dir = profile.get_downloads_path()
+        self.web_engine_profile.setDownloadPath(downloads_dir)
+        settings = self.web_engine_profile.settings()
+        settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalStorageEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.Accelerated2dCanvasEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.WebGLEnabled, True)
 
     def rename_profile(self, old_name: str, new_name: str) -> bool:
         if old_name == new_name or not new_name.strip():
@@ -753,7 +843,13 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
             "taboola.com", "outbrain.com", "adnxs.com", "rubiconproject.com",
             "criteo.com", "openx.net", "pubmatic.com", "adsystem.com",
             "adservice.com", "adform.net", "media.net", "serving-sys.com",
-            "zedo.com", "popads.net", "propellerads.com", "adroll.com"
+            "zedo.com", "popads.net", "propellerads.com", "adroll.com",
+            "pagead2.googlesyndication.com", "tpc.googlesyndication.com",
+            "googleads.g.doubleclick.net", "pubads.g.doubleclick.net",
+            "securepubads.g.doubleclick.net", "adservice.google.com",
+            "www.youtube.com/pagead", "www.youtube.com/ptracking",
+            "youtube.com/advert", "youtube.com/ad_format",
+            "youtube.com/ad_break", "youtube.com/adunit",
         ]
 
         default_trackers = [
@@ -762,17 +858,36 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
             "bing.com/action", "hotjar.com", "crazyegg.com", "mixpanel.com",
             "clarity.ms", "segment.io", "segment.com", "amplitude.com",
             "quantserve.com", "chartbeat.com", "matomo.org", "piwik.org",
-            "mouseflow.com", "fullstory.com", "yandex.ru/metrika"
+            "mouseflow.com", "fullstory.com", "yandex.ru/metrika",
+            "www.google.com/adsense", "adservice.google.com/adsid", "doubleclick.net/pagead",
+        ]
+
+        youtube_ad_patterns = [
+            re.compile(r"https?://[^/]*\.googlevideo\.com/.*[?&]adformat=[^&]+"),
+            re.compile(r"https?://[^/]*\.googlevideo\.com/.*[?&]adunit=[^&]+"),
+            re.compile(r"https?://[^/]*\.googlevideo\.com/.*[?&]is_ad=1"),
+            re.compile(r"https?://[^/]*\.googlevideo\.com/.*initplayback\?.*source=youtube.*"),
+            re.compile(r"https?://[^/]*\.googlesyndication\.com/.*"),
+            re.compile(r"https?://[^/]*\.doubleclick\.net/.*"),
+            re.compile(r"https?://[^/]*youtubei\.googleapis\.com/.*(?:ad|ads|doubleclick).*"),
+            re.compile(r"https?://[^/]*youtube\.com/pagead/.*"),
+            re.compile(r"https?://[^/]*youtube\.com/ptracking.*"),
+            re.compile(r"https?://[^/]*youtube\.com/.*[?&]is_ad=1"),
+            re.compile(r"https?://[^/]*youtube\.com/.*[?&]el=adunit"),
         ]
 
         for ad in default_ads:
             self.blocked_domains_ad.add(ad)
         for tr in default_trackers:
             self.blocked_domains_tracker.add(tr)
+        for pattern in youtube_ad_patterns:
+            self.regex_rules_ad.append(pattern)
 
-        self.filter_lists["Zenith Shield"].rules_count = len(default_ads) + len(default_trackers)
+        self.filter_lists["Zenith Shield"].rules_count = len(default_ads) + len(default_trackers) + len(youtube_ad_patterns)
         self.filter_lists["EasyList"].rules_count = len(default_ads) * 3
         self.filter_lists["EasyPrivacy"].rules_count = len(default_trackers) * 3
+
+        self._load_filter_file("filters.txt")
 
     def import_filter_list(self, name: str, content: str) -> None:
         lines = content.splitlines()
@@ -781,22 +896,83 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
             line = line.strip()
             if not line or line.startswith("!") or line.startswith("##"):
                 continue
-            if line.startswith("||"):
-                domain = line[2:].rstrip("^").split("^")[0].lower()
-                if domain:
-                    self.blocked_domains_ad.add(domain)
+            if line.startswith("@@"):
+                continue
+
+            filter_expr = line
+            modifiers = ""
+            if "$" in line:
+                filter_expr, modifiers = line.split("$", 1)
+                filter_expr = filter_expr.strip()
+                modifiers = modifiers.strip().lower()
+                if not filter_expr:
+                    continue
+                if "redirect=" in modifiers or "replace=" in modifiers or "denyallow=" in modifiers:
+                    continue
+                if "third-party" in modifiers and "1p" not in modifiers and "3p" not in modifiers:
+                    continue
+                # Only use request-type rules that our interceptor can reasonably block
+                if "xhr" not in modifiers and "script" not in modifiers and "image" not in modifiers and "frame" not in modifiers:
+                    continue
+
+            if not filter_expr:
+                continue
+            if filter_expr == "*" or filter_expr.startswith("*"):
+                continue
+
+            if filter_expr.startswith("||"):
+                domain_part = filter_expr[2:]
+                domain_part = domain_part.split("^", 1)[0].lower()
+                if domain_part and "/" not in domain_part and "*" not in domain_part:
+                    self.blocked_domains_ad.add(domain_part)
                     count += 1
-            elif line.startswith("|http"):
-                clean = line.strip("|")
-                try:
-                    pattern = re.compile(re.escape(clean).replace(r"\*", ".*"))
-                    self.regex_rules_ad.append(pattern)
-                    count += 1
-                except re.error:
-                    pass
+                    continue
+
+            if filter_expr.startswith("/"):
+                continue
+
+            regex_expr = re.escape(filter_expr)
+            regex_expr = regex_expr.replace(r"\*", ".*")
+            regex_expr = regex_expr.replace(r"\^", r"(?:[\/\:\?\=\&\.\-]|$)")
+
+            if filter_expr.startswith("||"):
+                regex_expr = re.escape(filter_expr[2:])
+                regex_expr = regex_expr.replace(r"\*", ".*")
+                regex_expr = regex_expr.replace(r"\^", r"(?:[\/\:\?\=\&\.\-]|$)")
+                regex_expr = r"https?://(?:[^/]+\.)?" + regex_expr
+            elif filter_expr.startswith("|http"):
+                regex_expr = re.escape(filter_expr[1:])
+                regex_expr = regex_expr.replace(r"\*", ".*")
+                regex_expr = regex_expr.replace(r"\^", r"(?:[\/\:\?\=\&\.\-]|$)")
+                regex_expr = r"^" + regex_expr
+            elif filter_expr.startswith("|"):
+                regex_expr = re.escape(filter_expr[1:])
+                regex_expr = regex_expr.replace(r"\*", ".*")
+                regex_expr = regex_expr.replace(r"\^", r"(?:[\/\:\?\=\&\.\-]|$)")
+                regex_expr = r"^" + regex_expr
+            else:
+                if "." not in filter_expr:
+                    continue
+
+            try:
+                pattern = re.compile(regex_expr)
+                self.regex_rules_ad.append(pattern)
+                count += 1
+            except re.error:
+                continue
 
         self.filter_lists[name] = FilterListInfo(name=name, enabled=True, rules_count=count)
         self.stats_updated.emit()
+
+    def _load_filter_file(self, filename: str) -> None:
+        filepath = os.path.join(BASE_DIR, filename)
+        if not os.path.exists(filepath):
+            return
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                self.import_filter_list(filename, f.read())
+        except Exception as exc:
+            print(f"Error loading filter file {filepath}: {exc}")
 
     def set_mode(self, mode: AdBlockMode) -> None:
         self.mode = mode
@@ -817,6 +993,8 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
         is_ad, is_tracker = self._check_should_block(url_str)
 
         if is_ad or is_tracker:
+            if "google.com" in url_str or "youtube.com" in url_str:
+                print(f"Blocked URL: {url_str} | ad={is_ad} tracker={is_tracker}")
             info.block(True)
             if is_ad:
                 self.session_ads_blocked += 1
@@ -834,11 +1012,23 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
             self.stats_updated.emit()
 
     def _check_should_block(self, url_str: str) -> Tuple[bool, bool]:
-        is_ad = any(domain in url_str for domain in self.blocked_domains_ad)
+        is_ad = False
         is_tracker = any(domain in url_str for domain in self.blocked_domains_tracker)
 
+        for domain in self.blocked_domains_ad:
+            if domain in url_str:
+                is_ad = True
+                if "google.com" in url_str or "youtube.com" in url_str:
+                    print(f"Matched ad domain: {domain} -> {url_str}")
+                break
+
         if not is_ad:
-            is_ad = any(rx.search(url_str) for rx in self.regex_rules_ad)
+            for rx in self.regex_rules_ad:
+                if rx.search(url_str):
+                    is_ad = True
+                    if "google.com" in url_str or "youtube.com" in url_str:
+                        print(f"Matched ad regex: {rx.pattern} -> {url_str}")
+                    break
 
         if self.mode == AdBlockMode.STRICT:
             if not is_ad:
@@ -863,14 +1053,51 @@ class AdBlocker(QWebEngineUrlRequestInterceptor):
 # Dynamic Custom WebEngineView with Mouse Link Intercept
 # ==========================================
 
+class CustomWebEnginePage(QWebEnginePage):
+    def __init__(self, profile: QWebEngineProfile, main_window: "MainWindow", parent: Optional[QObject] = None) -> None:
+        super().__init__(profile, parent)
+        self.main_window = main_window
+        self.featurePermissionRequested.connect(self._on_feature_permission_requested)
+        self.featurePermissionRequestCanceled.connect(self._on_feature_permission_canceled)
+
+    def _origin_key(self, url: QUrl) -> str:
+        if not url.isValid() or url.isEmpty():
+            return ""
+        host = url.host()
+        port = url.port()
+        origin = f"{url.scheme()}://{host}"
+        if port not in (-1, 80, 443):
+            origin = f"{origin}:{port}"
+        return origin
+
+    def _on_feature_permission_requested(self, security_origin: QUrl, feature: QWebEnginePage.Feature) -> None:
+        origin = self._origin_key(security_origin)
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        permissions = settings.get("permissions", {})
+        entry = permissions.get(origin, {})
+        feature_name = feature.name if hasattr(feature, "name") else str(int(feature))
+
+        allow = False
+        if feature == QWebEnginePage.Feature.ClipboardReadWrite:
+            allow = entry.get(feature_name, "Allowed") != "Denied"
+        else:
+            allow = entry.get(feature_name) == "Allowed"
+
+        policy = QWebEnginePage.PermissionPolicy.PermissionGrantedByUser if allow else QWebEnginePage.PermissionPolicy.PermissionDeniedByUser
+        self.setFeaturePermission(security_origin, feature, policy)
+
+    def _on_feature_permission_canceled(self, security_origin: QUrl, feature: QWebEnginePage.Feature) -> None:
+        self.setFeaturePermission(security_origin, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser)
+
+
 class CustomWebEngineView(QWebEngineView):
     """Custom view maintaining independent navigation history state & mouse gestures."""
 
     open_in_background_requested = pyqtSignal(QUrl)
 
-    def __init__(self, profile: QWebEngineProfile, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, profile: QWebEngineProfile, main_window: "MainWindow", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        page = QWebEnginePage(profile, self)
+        page = CustomWebEnginePage(profile, main_window, self)
         self.setPage(page)
         self.custom_history_stack: List[str] = []
 
@@ -1409,7 +1636,7 @@ class CookieCleanerExtension(BrowserExtension):
         if profile:
             profile.clearHttpCache()
             profile.cookieStore().deleteAllCookies()
-            window.statusBar().showMessage("Cleared cache and cookies for current profile.", 3000)
+            window._show_toast("Cleared cache and cookies for current profile.")
 
 
 class QuickCommandsExtension(BrowserExtension):
@@ -1534,6 +1761,13 @@ class QuickCommandsPalette(QWidget):
     def _populate_commands(self) -> None:
         mw = self.main_window
         self.commands = [
+            ("Translate Page", "Translate current website page to another language", lambda: mw.open_translate_dialog()),
+            ("View URL", "Show current page URL", lambda: mw.show_current_url_dialog()),
+            ("View History", "Open your browsing history", lambda: mw.open_history_dialog()),
+            ("View Bookmarks", "Open bookmark manager", lambda: mw.open_bookmarks_dialog()),
+            ("Open Incognito Tab", "Create a new private browsing tab", lambda: mw.open_incognito_tab()),
+            ("Audio Tools", "Open volume booster and EQ controls", lambda: mw.open_audio_tools_dialog()),
+            ("Remove Page Elements", "Remove page elements by CSS selector", lambda: mw.open_item_remover_dialog()),
             ("Switch / Manage Profiles", "Open profile manager window", lambda: mw.open_profile_dialog()),
             ("New Tab", "Open a new blank tab", lambda: mw.add_tab()),
             ("Close Tab", "Close current active tab", lambda: mw._handle_close_shortcut()),
@@ -1623,6 +1857,10 @@ class QuickCommandsPalette(QWidget):
         self.scale_anim.setStartValue(0.95)
         self.scale_anim.setEndValue(1.0)
         self.anim_group.stop()
+        try:
+            self.anim_group.finished.disconnect(self.hide)
+        except (TypeError, RuntimeError):
+            pass
         self.anim_group.start()
 
     def close_palette(self) -> None:
@@ -1632,7 +1870,7 @@ class QuickCommandsPalette(QWidget):
         self.scale_anim.setEndValue(0.95)
         self.anim_group.stop()
         try:
-            self.anim_group.finished.disconnect()
+            self.anim_group.finished.disconnect(self.hide)
         except TypeError:
             pass
         self.anim_group.finished.connect(self.hide)
@@ -1712,7 +1950,7 @@ class DownloadsDialog(QDialog):
         row = self.table.rowCount()
         self.table.insertRow(row)
 
-        file_name = os.path.basename(item.downloadDirectory() + "/" + item.downloadFileName())
+        file_name = item.downloadFileName()
         self.table.setItem(row, 0, QTableWidgetItem(file_name))
 
         pbar = QProgressBar()
@@ -1737,6 +1975,7 @@ class DownloadsDialog(QDialog):
 
         item.receivedBytesChanged.connect(lambda: self._update_progress(item))
         item.isFinishedChanged.connect(lambda: self._on_finished(item))
+        item.stateChanged.connect(lambda state: self._on_state_changed(item, state))
 
     def _update_progress(self, item: QWebEngineDownloadRequest) -> None:
         if item in self.download_items:
@@ -1749,13 +1988,22 @@ class DownloadsDialog(QDialog):
                 if isinstance(pbar, QProgressBar):
                     pbar.setValue(pct)
 
-    def _on_finished(self, item: QWebEngineDownloadRequest) -> None:
+    def _on_state_changed(self, item: QWebEngineDownloadRequest, state: QWebEngineDownloadRequest.DownloadState) -> None:
         if item in self.download_items:
             row = self.download_items[item]
             state_item = self.table.item(row, 2)
-            if state_item:
-                state_item.setText("Completed" if item.state() == QWebEngineDownloadRequest.DownloadState.DownloadCompleted else "Cancelled")
+            if not state_item:
+                return
 
+            if state == QWebEngineDownloadRequest.DownloadState.DownloadCompleted:
+                state_item.setText("Completed")
+            elif state == QWebEngineDownloadRequest.DownloadState.DownloadCancelled:
+                state_item.setText("Cancelled")
+            elif state == QWebEngineDownloadRequest.DownloadState.DownloadInterrupted:
+                state_item.setText("Failed / Interrupted")
+
+    def _on_finished(self, item: QWebEngineDownloadRequest) -> None:
+        self._on_state_changed(item, item.state())
 
 # ==========================================
 # 8. Modern Settings Dialog (Ctrl+,)
@@ -1777,14 +2025,14 @@ class SettingsDialog(QDialog):
             QTabWidget::pane {
                 border: 1px solid #27272A;
                 background-color: #1C1C20;
-                border-radius: 8px;
+                border-radius: 0px;
             }
             QTabBar::tab {
                 background: #27272A;
                 color: #A1A1AA;
                 padding: 8px 16px;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 0px;
             }
             QTabBar::tab:selected {
                 background: #6366F1;
@@ -1819,7 +2067,7 @@ class SettingsDialog(QDialog):
         gen_layout.addWidget(self.combo_engine)
 
         gen_layout.addWidget(QLabel("Homepage URL:"))
-        self.edit_home = QLineEdit(settings_data.get("homepage", HOME_PAGE_FILE))
+        self.edit_home = QLineEdit(settings_data.get("homepage", str(HOME_PAGE_FILE)))
         gen_layout.addWidget(self.edit_home)
 
         self.chk_restore = QCheckBox("Restore previous session on startup")
@@ -1898,9 +2146,919 @@ class SettingsDialog(QDialog):
         self.accept()
 
 
+class HistoryDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Browsing History")
+        self.resize(780, 520)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QTableWidget { background: #1C1C20; color: #F4F4F5; border: 1px solid #27272A; }
+            QHeaderView::section { background: #27272A; color: #F4F4F5; border: 1px solid #27272A; }
+            QPushButton { background: #27272A; color: #F4F4F5; border: 1px solid #3F3F46; border-radius: 6px; padding: 8px 12px; }
+            QPushButton:hover { background: #3F3F46; }
+        """)
+
+        layout = QVBoxLayout(self)
+        self.table = QTableWidget(self)
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Title", "URL", "Last Visited"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.verticalHeader().hide()
+        layout.addWidget(self.table)
+
+        button_layout = QHBoxLayout()
+        self.btn_open = QPushButton("Open Selected")
+        self.btn_open.clicked.connect(self._open_selected)
+        self.btn_clear = QPushButton("Clear History")
+        self.btn_clear.clicked.connect(self._clear_history)
+        button_layout.addWidget(self.btn_open)
+        button_layout.addWidget(self.btn_clear)
+        button_layout.addStretch()
+        layout.addLayout(button_layout)
+
+        self._load_history()
+
+    def _load_history(self) -> None:
+        history = self.main_window.profile_manager.data_manager.load_history()
+        history.sort(key=lambda item: item.get("last_visited", ""), reverse=True)
+        self.table.setRowCount(len(history))
+        for row, item in enumerate(history):
+            title_item = QTableWidgetItem(item.get("title", item.get("url", "")))
+            url_item = QTableWidgetItem(item.get("url", ""))
+            last_item = QTableWidgetItem(item.get("last_visited", ""))
+            self.table.setItem(row, 0, title_item)
+            self.table.setItem(row, 1, url_item)
+            self.table.setItem(row, 2, last_item)
+
+    def _open_selected(self) -> None:
+        row = self.table.currentRow()
+        if row == -1:
+            return
+        url_text = self.table.item(row, 1).text()
+        browser = self.main_window.current_browser()
+        if browser:
+            browser.load(QUrl(url_text))
+        else:
+            self.main_window.add_tab(url=QUrl(url_text), title="History")
+        self.accept()
+
+    def _clear_history(self) -> None:
+        self.main_window.profile_manager.data_manager.save_history([])
+        self.table.setRowCount(0)
+        self.main_window._show_toast("History cleared.")
+
+
+class BookmarksDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Bookmarks")
+        self.resize(780, 520)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QTableWidget { background: #1C1C20; color: #F4F4F5; border: 1px solid #27272A; }
+            QHeaderView::section { background: #27272A; color: #F4F4F5; border: 1px solid #27272A; }
+            QPushButton { background: #27272A; color: #F4F4F5; border: 1px solid #3F3F46; border-radius: 6px; padding: 8px 12px; }
+            QPushButton:hover { background: #3F3F46; }
+        """)
+
+        layout = QVBoxLayout(self)
+        self.table = QTableWidget(self)
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Title", "URL", "Created"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.verticalHeader().hide()
+        layout.addWidget(self.table)
+
+        button_layout = QHBoxLayout()
+        self.btn_open = QPushButton("Open Selected")
+        self.btn_open.clicked.connect(self._open_selected)
+        self.btn_remove = QPushButton("Remove Selected")
+        self.btn_remove.clicked.connect(self._remove_selected)
+        button_layout.addWidget(self.btn_open)
+        button_layout.addWidget(self.btn_remove)
+        button_layout.addStretch()
+        layout.addLayout(button_layout)
+
+        self._load_bookmarks()
+
+    def _load_bookmarks(self) -> None:
+        bookmarks = self.main_window.profile_manager.data_manager.load_bookmarks()
+        self.table.setRowCount(len(bookmarks))
+        for row, item in enumerate(bookmarks):
+            title_item = QTableWidgetItem(item.get("title", item.get("url", "")))
+            url_item = QTableWidgetItem(item.get("url", ""))
+            created_item = QTableWidgetItem(item.get("created", ""))
+            self.table.setItem(row, 0, title_item)
+            self.table.setItem(row, 1, url_item)
+            self.table.setItem(row, 2, created_item)
+
+    def _open_selected(self) -> None:
+        row = self.table.currentRow()
+        if row == -1:
+            return
+        url_text = self.table.item(row, 1).text()
+        browser = self.main_window.current_browser()
+        if browser:
+            browser.load(QUrl(url_text))
+        else:
+            self.main_window.add_tab(url=QUrl(url_text), title="Bookmark")
+        self.accept()
+
+    def _remove_selected(self) -> None:
+        row = self.table.currentRow()
+        if row == -1:
+            return
+        bookmarks = self.main_window.profile_manager.data_manager.load_bookmarks()
+        del bookmarks[row]
+        self.main_window.profile_manager.data_manager.save_bookmarks(bookmarks)
+        self._load_bookmarks()
+        self.main_window._show_toast("Bookmark removed.")
+
+
+class TranslateDialog(QDialog):
+    LANGUAGES = {
+        "English": "en",
+        "Spanish": "es",
+        "French": "fr",
+        "German": "de",
+        "Portuguese": "pt",
+        "Italian": "it",
+        "Japanese": "ja",
+        "Korean": "ko",
+        "Chinese (Simplified)": "zh-CN",
+        "Russian": "ru",
+    }
+
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Translate Page")
+        self.resize(420, 220)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QLabel, QComboBox, QPushButton { color: #F4F4F5; }
+            QComboBox, QLineEdit { background: #1F1F24; border: 1px solid #27272A; border-radius: 6px; padding: 8px; }
+            QPushButton { background: #6366F1; border: none; border-radius: 6px; padding: 10px; }
+            QPushButton:hover { background: #818cf8; }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Target Language:"))
+        self.lang_combo = QComboBox(self)
+        self.lang_combo.addItems(list(self.LANGUAGES.keys()))
+        self.lang_combo.setCurrentText("English")
+        layout.addWidget(self.lang_combo)
+
+        self.btn_translate = QPushButton("Translate Current Page", self)
+        self.btn_translate.clicked.connect(self._translate_page)
+        layout.addWidget(self.btn_translate)
+
+    def _translate_page(self) -> None:
+        browser = self.main_window.current_browser()
+        if not browser:
+            return
+        current_url = browser.url().toString()
+        if not current_url or current_url.startswith("about:") or current_url.startswith("file:"):
+            QMessageBox.warning(self, "Translation Error", "Cannot translate local or blank pages.")
+            return
+        target_lang_code = self.LANGUAGES.get(self.lang_combo.currentText(), "en")
+        encoded_url = QUrl.toPercentEncoding(current_url).data().decode("utf-8")
+        translate_url = f"https://translate.google.com/translate?sl=auto&tl={target_lang_code}&u={encoded_url}"
+        browser.load(QUrl(translate_url))
+        self.accept()
+
+
+class AudioToolsDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Audio Booster & EQ")
+        self.resize(700, 520)
+        self.setStyleSheet("""
+            QDialog { background-color: #17171D; color: #F4F4F5; }
+            QLabel, QComboBox, QSlider, QDial, QCheckBox, QPushButton { color: #F4F4F5; }
+            QComboBox, QSlider, QDial { background: #1F1F24; border: 1px solid #27272A; border-radius: 8px; }
+            QCheckBox { spacing: 8px; }
+            QCheckBox::indicator { width: 44px; height: 22px; border-radius: 11px; background: #27272A; }
+            QCheckBox::indicator:checked { background: #EC4899; }
+            QCheckBox::indicator:unchecked { background: #27272A; }
+            QCheckBox::indicator:checked:after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; left: 22px; top: 2px; }
+            QCheckBox::indicator:unchecked:after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; left: 2px; top: 2px; }
+            QPushButton { background: #EC4899; border: none; border-radius: 10px; padding: 12px 16px; }
+            QPushButton:hover { background: #F472B6; }
+            QFrame#card { background: #1F1F24; border: 1px solid #27272A; border-radius: 16px; }
+            QLabel#smallLabel { color: #A3A3A3; font-size: 11px; }
+        """)
+
+        self.band_frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+        self.band_sliders: List[QSlider] = []
+        self.band_value_labels: List[QLabel] = []
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(16)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        header_layout = QHBoxLayout()
+        header_layout.addWidget(QLabel("Equalizer"))
+        header_layout.addStretch(1)
+        header_layout.addWidget(QLabel("Presets"))
+        self.preset_combo = QComboBox(self)
+        self.preset_combo.addItems(["Normal", "Music", "Bass Boost", "Vocal Boost", "Custom"])
+        self.preset_combo.setCurrentText("Custom")
+        self.preset_combo.currentIndexChanged.connect(self._apply_preset)
+        header_layout.addWidget(self.preset_combo)
+        main_layout.addLayout(header_layout)
+
+        eq_layout = QGridLayout()
+        eq_layout.setSpacing(6)
+        for idx, freq in enumerate(self.band_frequencies):
+            band_layout = QVBoxLayout()
+            value_label = QLabel("0.0 dB")
+            value_label.setObjectName("smallLabel")
+            value_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            slider = QSlider(Qt.Orientation.Vertical, self)
+            slider.setRange(-120, 120)
+            slider.setValue(0)
+            slider.setTickInterval(30)
+            slider.setTickPosition(QSlider.TickPosition.TicksBothSides)
+            slider.valueChanged.connect(self._on_eq_band_changed)
+            freq_label = QLabel(str(freq))
+            freq_label.setObjectName("smallLabel")
+            freq_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            band_layout.addWidget(value_label)
+            band_layout.addWidget(slider, 1)
+            band_layout.addWidget(freq_label)
+            eq_layout.addLayout(band_layout, 0, idx)
+            self.band_sliders.append(slider)
+            self.band_value_labels.append(value_label)
+        main_layout.addLayout(eq_layout)
+
+        controls_layout = QHBoxLayout()
+        controls_layout.setSpacing(14)
+
+        for title, widget in [
+            ("Bass Boost", QCheckBox("")),
+            ("Loudness", QDial(self)),
+            ("Virtualizer", QCheckBox("")),
+        ]:
+            card = QFrame(self)
+            card.setObjectName("card")
+            card_layout = QVBoxLayout(card)
+            card_layout.setSpacing(10)
+            card_layout.setContentsMargins(14, 14, 14, 14)
+            card_layout.addWidget(QLabel(title))
+            if isinstance(widget, QCheckBox):
+                widget.setText("")
+                widget.stateChanged.connect(self._apply_audio_settings)
+                widget.setFixedSize(44, 22)
+                card_layout.addWidget(widget, alignment=Qt.AlignmentFlag.AlignCenter)
+                setattr(self, f"_{title.lower().replace(' ', '_')}_toggle", widget)
+            else:
+                widget.setRange(0, 100)
+                widget.setValue(18 if title == "Loudness" else 0)
+                widget.setWrapping(False)
+                widget.valueChanged.connect(self._apply_audio_settings)
+                widget.setFixedSize(80, 80)
+                card_layout.addWidget(widget, alignment=Qt.AlignmentFlag.AlignCenter)
+                label = QLabel(f"{widget.value()}%")
+                label.setObjectName("smallLabel")
+                label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                card_layout.addWidget(label)
+                self.loudness_value_label = label
+                self.loudness_dial = widget
+            controls_layout.addWidget(card, 1)
+        main_layout.addLayout(controls_layout)
+
+        self.volume_label = QLabel("Volume")
+        self.volume_label.setObjectName("smallLabel")
+        main_layout.addWidget(self.volume_label)
+
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal, self)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(100)
+        self.volume_slider.setTickInterval(10)
+        self.volume_slider.valueChanged.connect(self._apply_audio_settings)
+        main_layout.addWidget(self.volume_slider)
+
+        btn_layout = QHBoxLayout()
+        self.btn_reset_audio = QPushButton("Reset")
+        self.btn_reset_audio.clicked.connect(self._reset_audio)
+        btn_layout.addStretch(1)
+        btn_layout.addWidget(self.btn_reset_audio)
+        main_layout.addLayout(btn_layout)
+
+        self._apply_audio_settings()
+
+    def _on_eq_band_changed(self) -> None:
+        for slider, label in zip(self.band_sliders, self.band_value_labels):
+            value = slider.value() / 10.0
+            label.setText(f"{value:.1f} dB")
+        self._apply_audio_settings()
+
+    def _apply_preset(self) -> None:
+        preset = self.preset_combo.currentText()
+        presets = {
+            "Normal": [0] * 10,
+            "Music": [2, 1, 0, -1, -2, -2, -1, 0, 1, 2],
+            "Bass Boost": [4, 3, 2, 0, -1, -2, -2, -1, 0, 1],
+            "Vocal Boost": [-2, -1, 2, 4, 4, 2, 0, -1, -2, -2],
+            "Custom": None,
+        }
+        band_values = presets.get(preset)
+        if band_values is not None:
+            for slider, value in zip(self.band_sliders, band_values):
+                slider.setValue(int(value * 10))
+        self._apply_audio_settings()
+
+    def _apply_audio_settings(self) -> None:
+        browser = self.main_window.current_browser()
+        if not browser:
+            return
+
+        band_values = [slider.value() / 10.0 for slider in self.band_sliders]
+        bass_boost = 6 if getattr(self, "_bass_boost_toggle", None) and self._bass_boost_toggle.isChecked() else 0
+        loudness = self.loudness_dial.value() / 100.0
+        virtualizer_on = getattr(self, "_virtualizer_toggle", None) and self._virtualizer_toggle.isChecked()
+        volume = max(self.volume_slider.value(), 0) / 100.0
+
+        self.loudness_value_label.setText(f"{int(self.loudness_dial.value())}%")
+
+        js_values = ",".join(str(value) for value in band_values)
+        js = f"""
+            (function() {{
+                var eqGains = [{js_values}];
+                var bassGain = {bass_boost};
+                var virtualizer = {1 if virtualizer_on else 0};
+                var masterGain = {volume:.3f} * (1.0 + {loudness:.3f});
+                var targets = document.querySelectorAll('audio, video');
+                targets.forEach(function(el) {{
+                    try {{
+                        if (!el.zenithAudioContext) {{
+                            var AudioContext = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioContext) return;
+                            el.zenithAudioContext = new AudioContext();
+                            el.zenithAudioSource = el.zenithAudioContext.createMediaElementSource(el);
+                            el.zenithFilters = [31,62,125,250,500,1000,2000,4000,8000,16000].map(function(freq) {{
+                                var filter = el.zenithAudioContext.createBiquadFilter();
+                                filter.type = 'peaking';
+                                filter.frequency.value = freq;
+                                filter.Q.value = 1.0;
+                                filter.gain.value = 0;
+                                return filter;
+                            }});
+                            el.zenithBassFilter = el.zenithAudioContext.createBiquadFilter();
+                            el.zenithBassFilter.type = 'lowshelf';
+                            el.zenithBassFilter.frequency.value = 150;
+                            el.zenithBassFilter.gain.value = 0;
+                            el.zenithPanner = el.zenithAudioContext.createStereoPanner();
+                            el.zenithPanner.pan.value = 0;
+                            el.zenithMasterGain = el.zenithAudioContext.createGain();
+                            el.zenithMasterGain.gain.value = 1.0;
+                            var node = el.zenithAudioSource;
+                            el.zenithFilters.forEach(function(filter) {{
+                                node.connect(filter);
+                                node = filter;
+                            }});
+                            node.connect(el.zenithBassFilter);
+                            el.zenithBassFilter.connect(el.zenithPanner);
+                            el.zenithPanner.connect(el.zenithMasterGain);
+                            el.zenithMasterGain.connect(el.zenithAudioContext.destination);
+                        }} else if (el.zenithAudioContext && el.zenithAudioContext.state === 'suspended') {{
+                            el.zenithAudioContext.resume();
+                        }}
+                        if (el.zenithFilters) {{
+                            el.zenithFilters.forEach(function(filter, index) {{
+                                filter.gain.value = eqGains[index] || 0;
+                            }});
+                        }}
+                        if (el.zenithBassFilter) {{
+                            el.zenithBassFilter.gain.value = bassGain;
+                        }}
+                        if (el.zenithPanner) {{
+                            el.zenithPanner.pan.value = virtualizer ? 0.5 : 0.0;
+                        }}
+                        if (el.zenithMasterGain) {{
+                            el.zenithMasterGain.gain.value = masterGain;
+                        }}
+                    }} catch (e) {{ console.warn('Zenith EQ update failed', e); }}
+                }});
+            }})();
+        """
+        browser.page().runJavaScript(js)
+
+    def _reset_audio(self) -> None:
+        browser = self.main_window.current_browser()
+        if not browser:
+            return
+        js = """
+            (function() {
+                document.querySelectorAll('audio, video').forEach(function(el) {
+                    try {
+                        if (el.zenithFilters) {
+                            el.zenithFilters.forEach(function(filter) { filter.gain.value = 0; });
+                        }
+                        if (el.zenithBassFilter) {
+                            el.zenithBassFilter.gain.value = 0;
+                        }
+                        if (el.zenithPanner) {
+                            el.zenithPanner.pan.value = 0;
+                        }
+                        if (el.zenithMasterGain) {
+                            el.zenithMasterGain.gain.value = 1.0;
+                        }
+                        el.volume = 1.0;
+                    } catch (e) {}
+                });
+            })();
+        """
+        browser.page().runJavaScript(js)
+        self.preset_combo.setCurrentText("Normal")
+        for slider in self.band_sliders:
+            slider.setValue(0)
+        if getattr(self, "_bass_boost_toggle", None):
+            self._bass_boost_toggle.setChecked(False)
+        if getattr(self, "_virtualizer_toggle", None):
+            self._virtualizer_toggle.setChecked(False)
+        self.loudness_dial.setValue(18)
+        self.volume_slider.setValue(100)
+        self.main_window._show_toast("Audio reset to normal level.")
+
+
+class ItemRemoverDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Remove Page Elements")
+        self.resize(440, 200)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QLabel, QLineEdit, QPushButton { color: #F4F4F5; }
+            QLineEdit { background: #1F1F24; border: 1px solid #27272A; border-radius: 6px; padding: 8px; }
+            QPushButton { background: #6366F1; border: none; border-radius: 6px; padding: 10px; }
+            QPushButton:hover { background: #818cf8; }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("CSS Selector to remove:"))
+        self.selector_input = QLineEdit(self)
+        self.selector_input.setPlaceholderText("e.g. p, .ad-banner, #promo, .video-overlay")
+        layout.addWidget(self.selector_input)
+
+        btn_layout = QHBoxLayout()
+        self.btn_remove = QPushButton("Remove Elements")
+        self.btn_remove.clicked.connect(self._remove_elements)
+        self.btn_hide = QPushButton("Hide Elements")
+        self.btn_hide.clicked.connect(self._hide_elements)
+        btn_layout.addWidget(self.btn_remove)
+        btn_layout.addWidget(self.btn_hide)
+        layout.addLayout(btn_layout)
+
+    def _remove_elements(self) -> None:
+        selector = self.selector_input.text().strip()
+        if not selector:
+            return
+        browser = self.main_window.current_browser()
+        if not browser:
+            return
+        js = f"document.querySelectorAll(`{selector}`).forEach(function(el) {{ el.remove(); }});"
+        browser.page().runJavaScript(js)
+        self.main_window._show_toast(f"Removed elements matching: {selector}")
+        self.accept()
+
+    def _hide_elements(self) -> None:
+        selector = self.selector_input.text().strip()
+        if not selector:
+            return
+        browser = self.main_window.current_browser()
+        if not browser:
+            return
+        js = f"document.querySelectorAll(`{selector}`).forEach(function(el) {{ el.style.display = 'none'; }});"
+        browser.page().runJavaScript(js)
+        self.main_window._show_toast(f"Hidden elements matching: {selector}")
+        self.accept()
+
+
+class ThemeMakerDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Theme Maker")
+        self.resize(680, 460)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QLabel, QLineEdit, QPushButton, QListWidget { color: #F4F4F5; }
+            QLineEdit, QListWidget { background: #1F1F24; border: 1px solid #27272A; border-radius: 6px; }
+            QPushButton { background: #6366F1; border: none; border-radius: 6px; padding: 10px; }
+            QPushButton:hover { background: #818cf8; }
+            QListWidget::item:selected { background: #27272A; }
+        """)
+
+        self.theme_list = QListWidget(self)
+        self.theme_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.theme_list.itemSelectionChanged.connect(self._load_selected_theme)
+
+        self.name_input = QLineEdit(self)
+        self.accent_color_button = QPushButton("Accent Color", self)
+        self.background_color_button = QPushButton("Background Color", self)
+        self.text_color_button = QPushButton("Text Color", self)
+        self.toolbar_color_button = QPushButton("Toolbar Color", self)
+
+        self.accent_preview = QLabel(self)
+        self.background_preview = QLabel(self)
+        self.text_preview = QLabel(self)
+        self.toolbar_preview = QLabel(self)
+
+        self.accent_preview.setFixedSize(36, 24)
+        self.background_preview.setFixedSize(36, 24)
+        self.text_preview.setFixedSize(36, 24)
+        self.toolbar_preview.setFixedSize(36, 24)
+
+        self.accent_color_button.clicked.connect(lambda: self._pick_color("accent_color"))
+        self.background_color_button.clicked.connect(lambda: self._pick_color("background_color"))
+        self.text_color_button.clicked.connect(lambda: self._pick_color("text_color"))
+        self.toolbar_color_button.clicked.connect(lambda: self._pick_color("toolbar_color"))
+
+        self.save_button = QPushButton("Save Theme", self)
+        self.activate_button = QPushButton("Activate Theme", self)
+        self.delete_button = QPushButton("Delete Theme", self)
+        self.export_button = QPushButton("Export .ztheme", self)
+        self.import_button = QPushButton("Import .ztheme", self)
+
+        self.save_button.clicked.connect(self._save_theme)
+        self.activate_button.clicked.connect(self._activate_theme)
+        self.delete_button.clicked.connect(self._delete_theme)
+        self.export_button.clicked.connect(self._export_theme)
+        self.import_button.clicked.connect(self._import_theme)
+
+        self.status_label = QLabel("Manage your browser themes and save them per profile.", self)
+        self.status_label.setStyleSheet("color: #A1A1AA; font-size: 11px;")
+
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(QLabel("Saved Themes"))
+        left_layout.addWidget(self.theme_list)
+
+        right_layout = QVBoxLayout()
+        right_layout.setSpacing(12)
+        right_layout.addWidget(QLabel("Theme Name"))
+        right_layout.addWidget(self.name_input)
+
+        for button, preview, label in [
+            (self.accent_color_button, self.accent_preview, "Accent"),
+            (self.background_color_button, self.background_preview, "Background"),
+            (self.text_color_button, self.text_preview, "Text"),
+            (self.toolbar_color_button, self.toolbar_preview, "Toolbar"),
+        ]:
+            row = QHBoxLayout()
+            row.addWidget(QLabel(label))
+            row.addWidget(button)
+            row.addStretch()
+            row.addWidget(preview)
+            right_layout.addLayout(row)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.save_button)
+        button_layout.addWidget(self.activate_button)
+        button_layout.addWidget(self.delete_button)
+
+        export_layout = QHBoxLayout()
+        export_layout.addWidget(self.export_button)
+        export_layout.addWidget(self.import_button)
+
+        right_layout.addLayout(button_layout)
+        right_layout.addLayout(export_layout)
+        right_layout.addStretch()
+        right_layout.addWidget(self.status_label)
+
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(14, 14, 14, 14)
+        main_layout.setSpacing(14)
+        main_layout.addLayout(left_layout, 1)
+        main_layout.addLayout(right_layout, 2)
+
+        self._refresh_theme_list()
+        self._set_color_previews({
+            "accent_color": "#6366F1",
+            "background_color": "#18181B",
+            "text_color": "#F4F4F5",
+            "toolbar_color": "#18181B",
+        })
+
+    def _pick_color(self, key: str) -> None:
+        current = self._get_color_value(key)
+        color = QColorDialog.getColor(QColor(current), self, "Select Color")
+        if color.isValid():
+            self._set_color_value(key, color.name())
+            self._set_color_previews({key: color.name()})
+
+    def _get_color_value(self, key: str) -> str:
+        return getattr(self, f"_{key}", {
+            "accent_color": "#6366F1",
+            "background_color": "#18181B",
+            "text_color": "#F4F4F5",
+            "toolbar_color": "#18181B",
+        }[key])
+
+    def _set_color_value(self, key: str, value: str) -> None:
+        setattr(self, f"_{key}", value)
+
+    def _set_color_previews(self, colors: Dict[str, str]) -> None:
+        for key, value in colors.items():
+            setattr(self, f"_{key}", value)
+            preview = getattr(self, f"{key.split('_')[0]}_preview")
+            preview.setStyleSheet(f"background: {value}; border: 1px solid #27272A; border-radius: 4px;")
+
+    def _refresh_theme_list(self) -> None:
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        self.themes = settings.get("themes", {})
+        self.theme_list.clear()
+        active_theme = settings.get("active_theme")
+        for name in sorted(self.themes.keys(), key=str.lower):
+            item = QListWidgetItem(name)
+            if name == active_theme:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+                item.setText(f"{name} (active)")
+            self.theme_list.addItem(item)
+
+    def _load_selected_theme(self) -> None:
+        item = self.theme_list.currentItem()
+        if not item:
+            return
+        name = item.text().replace(" (active)", "")
+        theme = self.themes.get(name, {})
+        self.name_input.setText(name)
+        self._set_color_previews({
+            "accent_color": theme.get("accent_color", "#6366F1"),
+            "background_color": theme.get("background_color", "#18181B"),
+            "text_color": theme.get("text_color", "#F4F4F5"),
+            "toolbar_color": theme.get("toolbar_color", "#18181B"),
+        })
+
+    def _build_theme(self) -> Dict[str, str]:
+        return {
+            "accent_color": self._get_color_value("accent_color"),
+            "background_color": self._get_color_value("background_color"),
+            "text_color": self._get_color_value("text_color"),
+            "toolbar_color": self._get_color_value("toolbar_color"),
+        }
+
+    def _save_theme(self) -> None:
+        name = self.name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Missing Name", "Enter a theme name before saving.")
+            return
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        themes = settings.get("themes", {})
+        theme = self._build_theme()
+        themes[name] = theme
+        settings["themes"] = themes
+        settings["active_theme"] = name
+        self.main_window.profile_manager.data_manager.save_settings(settings)
+        self.main_window.apply_theme(theme)
+        self._show_status(f"Saved and activated theme '{name}'.")
+        self._refresh_theme_list()
+        self._select_theme_item(name)
+
+    def _activate_theme(self) -> None:
+        name = self.name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Missing Theme", "Select a theme to activate.")
+            return
+        theme = self.themes.get(name)
+        if not theme:
+            QMessageBox.warning(self, "Unknown Theme", f"Theme '{name}' could not be found.")
+            return
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        settings["active_theme"] = name
+        self.main_window.profile_manager.data_manager.save_settings(settings)
+        self.main_window.apply_theme(theme)
+        self._show_status(f"Activated theme '{name}'.")
+        self._refresh_theme_list()
+        self._select_theme_item(name)
+
+    def _delete_theme(self) -> None:
+        name = self.name_input.text().strip()
+        if not name or name not in self.themes:
+            return
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        themes = settings.get("themes", {})
+        themes.pop(name, None)
+        settings["themes"] = themes
+        if settings.get("active_theme") == name:
+            settings["active_theme"] = None
+        self.main_window.profile_manager.data_manager.save_settings(settings)
+        self._show_status(f"Deleted theme '{name}'.")
+        self.name_input.clear()
+        self._refresh_theme_list()
+
+    def _export_theme(self) -> None:
+        name = self.name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Missing Theme", "Select a theme to export.")
+            return
+        theme = self.themes.get(name)
+        if not theme:
+            QMessageBox.warning(self, "Unknown Theme", f"Theme '{name}' could not be found.")
+            return
+        filename, _ = QFileDialog.getSaveFileName(self, "Export Theme", f"{name}.ztheme", "Zenith Theme Files (*.ztheme);;JSON Files (*.json)")
+        if not filename:
+            return
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump({"name": name, "theme": theme}, f, indent=4)
+            self._show_status(f"Exported theme '{name}' to {os.path.basename(filename)}.")
+        except Exception as e:
+            QMessageBox.warning(self, "Export Failed", f"Could not export theme: {e}")
+
+    def _import_theme(self) -> None:
+        filename, _ = QFileDialog.getOpenFileName(self, "Import Theme", "", "Zenith Theme Files (*.ztheme *.json);;JSON Files (*.json)")
+        if not filename:
+            return
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            QMessageBox.warning(self, "Import Failed", f"Could not read theme file: {e}")
+            return
+        if isinstance(data, dict):
+            theme = data.get("theme") if "theme" in data else data
+            name = data.get("name") if "name" in data else os.path.splitext(os.path.basename(filename))[0]
+            if not isinstance(theme, dict):
+                QMessageBox.warning(self, "Invalid Theme", "Imported file does not contain a valid theme.")
+                return
+            settings = self.main_window.profile_manager.data_manager.load_settings()
+            themes = settings.get("themes", {})
+            themes[name] = theme
+            settings["themes"] = themes
+            self.main_window.profile_manager.data_manager.save_settings(settings)
+            self._show_status(f"Imported theme '{name}'.")
+            self._refresh_theme_list()
+            self._select_theme_item(name)
+        else:
+            QMessageBox.warning(self, "Invalid Theme", "Imported file does not contain a valid theme object.")
+
+    def _show_status(self, message: str) -> None:
+        self.status_label.setText(message)
+
+    def _select_theme_item(self, name: str) -> None:
+        for i in range(self.theme_list.count()):
+            item = self.theme_list.item(i)
+            if item.text().replace(" (active)", "") == name:
+                self.theme_list.setCurrentItem(item)
+                return
+
+
 # ==========================================
 # Original Search Overlay Widgets
 # ==========================================
+
+class PermissionsDialog(QDialog):
+    def __init__(self, main_window: "MainWindow") -> None:
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.setWindowTitle("Permissions Manager")
+        self.resize(520, 380)
+        self.setStyleSheet("""
+            QDialog { background-color: #18181B; color: #F4F4F5; }
+            QLabel { color: #F4F4F5; }
+            QComboBox, QListWidget { background: #1F1F24; color: #F4F4F5; border: 1px solid #27272A; border-radius: 6px; }
+            QCheckBox { color: #F4F4F5; }
+            QPushButton { background: #6366F1; color: #FFFFFF; border: none; border-radius: 6px; padding: 8px 12px; }
+            QPushButton:hover { background: #4F46E5; }
+        """)
+
+        self.origin_combo = QComboBox(self)
+        self.origin_combo.currentIndexChanged.connect(self._load_origin_permissions)
+
+        self.current_url_label = QLabel("Current site: None", self)
+        self.cb_clipboard = QCheckBox("Clipboard access", self)
+        self.cb_notifications = QCheckBox("Notifications", self)
+        self.cb_geolocation = QCheckBox("Location access", self)
+        self.cb_camera = QCheckBox("Camera access", self)
+        self.cb_microphone = QCheckBox("Microphone access", self)
+        self.cb_mouse_lock = QCheckBox("Pointer lock", self)
+
+        self.btn_add_current = QPushButton("Use current site", self)
+        self.btn_add_current.clicked.connect(self._add_current_site)
+        self.btn_save = QPushButton("Save Permissions", self)
+        self.btn_save.clicked.connect(self._save_permissions)
+        self.btn_clear = QPushButton("Clear Entry", self)
+        self.btn_clear.clicked.connect(self._clear_permissions)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.addWidget(QLabel("Origin"))
+        layout.addWidget(self.origin_combo)
+        layout.addWidget(self.current_url_label)
+        layout.addWidget(self.btn_add_current)
+        layout.addWidget(self.cb_clipboard)
+        layout.addWidget(self.cb_notifications)
+        layout.addWidget(self.cb_geolocation)
+        layout.addWidget(self.cb_camera)
+        layout.addWidget(self.cb_microphone)
+        layout.addWidget(self.cb_mouse_lock)
+
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.btn_save)
+        button_row.addWidget(self.btn_clear)
+        layout.addLayout(button_row)
+
+        self._refresh_origins()
+        self._load_selected_permissions()
+
+    def _origin_key(self, url: QUrl) -> str:
+        if not url.isValid() or url.isEmpty():
+            return ""
+        host = url.host()
+        port = url.port()
+        origin = f"{url.scheme()}://{host}"
+        if port not in (-1, 80, 443):
+            origin = f"{origin}:{port}"
+        return origin
+
+    def _refresh_origins(self) -> None:
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        permissions = settings.get("permissions", {})
+        self.origin_combo.blockSignals(True)
+        self.origin_combo.clear()
+        for origin in sorted(permissions.keys(), key=str.lower):
+            self.origin_combo.addItem(origin)
+        self.origin_combo.blockSignals(False)
+
+    def _load_selected_permissions(self) -> None:
+        origin = self.origin_combo.currentText()
+        self._load_permissions_for_origin(origin)
+
+    def _load_origin_permissions(self, index: int) -> None:
+        origin = self.origin_combo.itemText(index)
+        self._load_permissions_for_origin(origin)
+
+    def _load_permissions_for_origin(self, origin: str) -> None:
+        self.current_url_label.setText(f"Current site: {origin or 'None'}")
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        permissions = settings.get("permissions", {})
+        entry = permissions.get(origin, {}) if origin else {}
+        self.cb_clipboard.setChecked(entry.get("ClipboardReadWrite") == "Allowed")
+        self.cb_notifications.setChecked(entry.get("Notifications") == "Allowed")
+        self.cb_geolocation.setChecked(entry.get("Geolocation") == "Allowed")
+        self.cb_camera.setChecked(entry.get("MediaVideoCapture") == "Allowed")
+        self.cb_microphone.setChecked(entry.get("MediaAudioCapture") == "Allowed")
+        self.cb_mouse_lock.setChecked(entry.get("MouseLock") == "Allowed")
+
+    def _current_origin(self) -> str:
+        browser = self.main_window.current_browser()
+        if not browser:
+            return ""
+        return self._origin_key(browser.url())
+
+    def _add_current_site(self) -> None:
+        origin = self._current_origin()
+        if not origin:
+            return
+        if self.origin_combo.findText(origin) == -1:
+            self.origin_combo.addItem(origin)
+        self.origin_combo.setCurrentText(origin)
+        self._load_permissions_for_origin(origin)
+
+    def _save_permissions(self) -> None:
+        origin = self.origin_combo.currentText()
+        if not origin:
+            return
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        permissions = settings.get("permissions", {})
+        permissions[origin] = {
+            "ClipboardReadWrite": "Allowed" if self.cb_clipboard.isChecked() else "Denied",
+            "Notifications": "Allowed" if self.cb_notifications.isChecked() else "Denied",
+            "Geolocation": "Allowed" if self.cb_geolocation.isChecked() else "Denied",
+            "MediaVideoCapture": "Allowed" if self.cb_camera.isChecked() else "Denied",
+            "MediaAudioCapture": "Allowed" if self.cb_microphone.isChecked() else "Denied",
+            "MouseLock": "Allowed" if self.cb_mouse_lock.isChecked() else "Denied",
+        }
+        settings["permissions"] = permissions
+        self.main_window.profile_manager.data_manager.save_settings(settings)
+        self._refresh_origins()
+
+    def _clear_permissions(self) -> None:
+        origin = self.origin_combo.currentText()
+        if not origin:
+            return
+        settings = self.main_window.profile_manager.data_manager.load_settings()
+        permissions = settings.get("permissions", {})
+        permissions.pop(origin, None)
+        settings["permissions"] = permissions
+        self.main_window.profile_manager.data_manager.save_settings(settings)
+        self._refresh_origins()
+        self._load_selected_permissions()
 
 class SearchIconLabel(QLabel):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -2187,11 +3345,11 @@ class BrowserTabWidget(QTabWidget):
                 color: #A1A1AA;
                 border: 1px solid #27272A;
                 border-bottom: none;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
-                padding: 7px 16px;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 0px;
+                padding: 7px 12px 7px 16px;
                 margin-top: 5px;
-                margin-right: 3px;
+                margin-right: 1px;
                 min-width: 130px;
                 max-width: 230px;
                 font-family: 'Inter', sans-serif;
@@ -2200,6 +3358,11 @@ class BrowserTabWidget(QTabWidget):
             QTabBar::tab:hover {
                 background: #27272A;
                 color: #F4F4F5;
+            }
+            QTabBar::close-button {
+                width: 16px;
+                height: 16px;
+                margin-right: 6px;
             }
             QTabBar::tab:selected {
                 background: #27272A;
@@ -2227,9 +3390,15 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(WINDOW_TITLE)
         self.resize(DEFAULT_WINDOW_SIZE)
+        # allow drag & drop of files onto the main window
+        self.setAcceptDrops(True)
 
         # 1. Profile Architecture Initialization
-        self.profile_manager = ProfileManager(base_dir="profiles")
+        # Store profiles under the OS app data location (per-user)
+        appdata_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)
+        profiles_base = os.path.join(appdata_dir or os.path.expanduser("~"), "Zenith", "profiles")
+        os.makedirs(profiles_base, exist_ok=True)
+        self.profile_manager = ProfileManager(base_dir=profiles_base)
         self.session_manager = SessionManager(self.profile_manager)
 
         self.quick_palette = QuickCommandsPalette(self)
@@ -2240,12 +3409,18 @@ class MainWindow(QMainWindow):
         self._init_ad_blocker()
         self._init_browser_ui()
         self._init_extensions()
-        self._init_status_bar()
         self._init_overlays()
         self._init_shortcuts()
 
-        # 2. Startup session load logic
+        # Apply saved theme for current profile
         settings = self.profile_manager.data_manager.load_settings()
+        active_theme = settings.get("active_theme")
+        if active_theme:
+            theme = settings.get("themes", {}).get(active_theme)
+            if isinstance(theme, dict):
+                self.apply_theme(theme)
+
+        # 2. Startup session load logic
         if settings.get("restore_session", True):
             if not self.restore_previous_session():
                 self.add_tab()
@@ -2335,8 +3510,48 @@ class MainWindow(QMainWindow):
         tb_layout.addWidget(self.btn_back)
         tb_layout.addWidget(self.btn_forward)
         tb_layout.addWidget(self.btn_reload)
+
+        self.btn_audio_tools = QPushButton("🔊", self.toolbar)
+        self.btn_audio_tools.setToolTip("Open volume booster and EQ controls")
+        self.btn_audio_tools.clicked.connect(self.open_audio_tools_dialog)
+        tb_layout.addWidget(self.btn_audio_tools)
+
+        self.btn_theme_maker = QPushButton("🎨", self.toolbar)
+        self.btn_theme_maker.setToolTip("Open Theme Maker")
+        self.btn_theme_maker.clicked.connect(self.open_themes_page)
+        tb_layout.addWidget(self.btn_theme_maker)
+
+        self.btn_permissions = QPushButton("🔐", self.toolbar)
+        self.btn_permissions.setToolTip("Open Permission Manager")
+        self.btn_permissions.clicked.connect(self.open_permission_manager)
+        tb_layout.addWidget(self.btn_permissions)
+
+        self.btn_item_remover = QPushButton("🧹", self.toolbar)
+        self.btn_item_remover.setToolTip("Remove page elements by CSS selector")
+        self.btn_item_remover.clicked.connect(self.open_item_remover_dialog)
+        tb_layout.addWidget(self.btn_item_remover)
+
+        self.btn_incognito = QPushButton("🕶", self.toolbar)
+        self.btn_incognito.setToolTip("Open a new incognito tab")
+        self.btn_incognito.clicked.connect(self.open_incognito_tab)
+        tb_layout.addWidget(self.btn_incognito)
+
+        self.status_adblock_label = QLabel("🛡 Balanced", self.toolbar)
+        self.status_adblock_label.setStyleSheet("color: #A1A1AA; font-size: 11px; padding: 0 8px;")
+        self.status_adblock_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.status_adblock_label.mousePressEvent = lambda e: self.ad_block_popup.open_popup()
+        tb_layout.addWidget(self.status_adblock_label)
+
         tb_layout.addStretch()
+        self.toast_label = QLabel(self.toolbar)
+        self.toast_label.setStyleSheet("color: #F4F4F5; font-size: 11px; background: rgba(99,102,241,0.16); border-radius: 8px; padding: 4px 10px;")
+        self.toast_label.hide()
+        tb_layout.addWidget(self.toast_label)
         tb_layout.addWidget(self.btn_profile)
+
+        self.toast_timer = QTimer(self)
+        self.toast_timer.setSingleShot(True)
+        self.toast_timer.timeout.connect(self.toast_label.hide)
 
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setFixedHeight(2)
@@ -2381,21 +3596,161 @@ class MainWindow(QMainWindow):
         self.ad_block_popup.mode_changed.connect(self._change_ad_block_mode)
         self.ad_block_popup.reset_stats_requested.connect(self.ad_blocker.reset_stats)
 
-    def _init_status_bar(self) -> None:
-        status_container = QWidget(self)
-        status_layout = QHBoxLayout(status_container)
-        status_layout.setContentsMargins(12, 4, 12, 4)
+    def _show_toast(self, message: str, duration_ms: int = 2800) -> None:
+        self.toast_label.setText(message)
+        self.toast_label.show()
+        self.toast_timer.start(duration_ms)
 
-        self.status_adblock_label = QLabel(status_container)
-        self.status_adblock_label.setStyleSheet("color: #A1A1AA; font-size: 11px; font-weight: bold;")
-        self.status_adblock_label.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.status_adblock_label.mousePressEvent = lambda e: self.ad_block_popup.open_popup()
+    def open_history_dialog(self) -> None:
+        dlg = HistoryDialog(self)
+        dlg.exec()
 
-        status_layout.addStretch()
-        status_layout.addWidget(self.status_adblock_label)
+    def open_bookmarks_dialog(self) -> None:
+        dlg = BookmarksDialog(self)
+        dlg.exec()
 
-        self.statusBar().addPermanentWidget(status_container)
-        self.statusBar().setStyleSheet("QStatusBar { background: #18181B; border-top: 1px solid #27272A; }")
+    def open_audio_tools_dialog(self) -> None:
+        dlg = AudioToolsDialog(self)
+        dlg.exec()
+
+    def open_item_remover_dialog(self) -> None:
+        dlg = ItemRemoverDialog(self)
+        dlg.exec()
+
+    def open_themes_page(self) -> None:
+        dlg = ThemeMakerDialog(self)
+        dlg.exec()
+
+    def open_permission_manager(self) -> None:
+        dlg = PermissionsDialog(self)
+        dlg.exec()
+
+    def open_translate_dialog(self) -> None:
+        dlg = TranslateDialog(self)
+        dlg.exec()
+
+    def apply_theme(self, theme: Dict[str, str]) -> None:
+        if not isinstance(theme, dict):
+            return
+        accent = theme.get("accent_color", "#6366F1")
+        bg = theme.get("background_color", "#18181B")
+        fg = theme.get("text_color", "#F4F4F5")
+        toolbar = theme.get("toolbar_color", "#18181B")
+
+        self.toolbar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {toolbar};
+                border-bottom: 1px solid #27272A;
+            }}
+            QPushButton {{
+                background: #27272A;
+                color: {fg};
+                border: 1px solid #3F3F46;
+                border-radius: 8px;
+                min-width: 28px;
+                max-width: 28px;
+                min-height: 24px;
+                max-height: 24px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: #3F3F46;
+                color: {fg};
+            }}
+            QPushButton:disabled {{
+                background: #1C1C20;
+                color: #52525B;
+                border: 1px solid #27272A;
+            }}
+            QPushButton#ProfileBtn {{
+                min-width: 110px;
+                max-width: 180px;
+                padding-left: 8px;
+                padding-right: 8px;
+                text-align: left;
+            }}
+        """)
+        self.setStyleSheet(f"QMainWindow {{ background-color: {bg}; color: {fg}; }}")
+        self.toolbar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {toolbar};
+                border-bottom: 1px solid #27272A;
+            }}
+            QPushButton {{
+                background: {accent};
+                color: {fg};
+                border: 1px solid {accent};
+                border-radius: 8px;
+                min-width: 28px;
+                max-width: 28px;
+                min-height: 24px;
+                max-height: 24px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {fg};
+                color: {bg};
+            }}
+            QPushButton:disabled {{
+                background: #1C1C20;
+                color: #52525B;
+                border: 1px solid #27272A;
+            }}
+            QPushButton#ProfileBtn {{
+                min-width: 110px;
+                max-width: 180px;
+                padding-left: 8px;
+                padding-right: 8px;
+                text-align: left;
+            }}
+        """)
+        if hasattr(self, 'tab_widget'):
+            self.tab_widget.setStyleSheet(f"""
+                QTabWidget::pane {{
+                    border: none;
+                    background-color: #121214;
+                }}
+                QTabBar {{
+                    background-color: #18181B;
+                    border-bottom: 1px solid #27272A;
+                    qproperty-drawBase: 0;
+                }}
+                QTabBar::tab {{
+                    background: #1C1C20;
+                    color: #A1A1AA;
+                    border: 1px solid #27272A;
+                    border-bottom: none;
+                    border-top-left-radius: 0px;
+                    border-top-right-radius: 0px;
+                    padding: 7px 12px 7px 16px;
+                    margin-top: 5px;
+                    margin-right: 1px;
+                    min-width: 130px;
+                    max-width: 230px;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 11px;
+                }}
+                QTabBar::tab:hover {{
+                    background: #27272A;
+                    color: #F4F4F5;
+                }}
+                QTabBar::close-button {{
+                    width: 16px;
+                    height: 16px;
+                    margin-right: 6px;
+                }}
+                QTabBar::tab:selected {{
+                    background: #27272A;
+                    color: #FFFFFF;
+                    border: 1px solid {accent};
+                    border-bottom: 2px solid {accent};
+                }}
+            """)
+        self.status_adblock_label.setStyleSheet(f"color: {fg}; font-size: 11px; padding: 0 8px;")
+        self.toast_label.setStyleSheet(f"color: {fg}; font-size: 11px; background: rgba(99,102,241,0.16); border-radius: 8px; padding: 4px 10px;")
+
+    def open_incognito_tab(self) -> None:
+        self.add_tab(incognito=True)
 
     def _init_shortcuts(self) -> None:
         # Alt+Left & Alt+Right for Navigation
@@ -2406,7 +3761,7 @@ class MainWindow(QMainWindow):
         shortcut_fwd.activated.connect(self._nav_forward)
 
         # Profile Switcher Shortcut
-        QShortcut(QKeySequence("Ctrl+Shift+P"), self).activated.connect(self.open_profile_dialog)
+        QShortcut(QKeySequence("Ctrl+Shift+P"), self).activated.connect(self.open_quick_commands_palette)
         QShortcut(QKeySequence("Ctrl+Shift+S"), self).activated.connect(self.restore_previous_session)
 
         # Navigation Shortcuts
@@ -2415,6 +3770,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+K"), self).activated.connect(self.overlay.open_overlay)
 
         QShortcut(QKeySequence("Ctrl+Shift+A"), self).activated.connect(self.ad_block_popup.open_popup)
+        QShortcut(QKeySequence("Ctrl+Shift+Y"), self).activated.connect(self.open_themes_page)
         QShortcut(QKeySequence("Ctrl+T"), self).activated.connect(lambda: self.add_tab())
         QShortcut(QKeySequence("Ctrl+W"), self).activated.connect(self._handle_close_shortcut)
 
@@ -2437,11 +3793,19 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Shift+D"), self).activated.connect(self.bookmark_all_tabs)
 
         QShortcut(QKeySequence("Ctrl+H"), self).activated.connect(self.open_help)
+        QShortcut(QKeySequence("Ctrl+Shift+H"), self).activated.connect(self.open_history_dialog)
+        QShortcut(QKeySequence("Ctrl+Shift+B"), self).activated.connect(self.open_bookmarks_dialog)
+        QShortcut(QKeySequence("Ctrl+Shift+V"), self).activated.connect(self.open_audio_tools_dialog)
+        # View URL Shortcut
+        QShortcut(QKeySequence("Ctrl+Shift+U"), self).activated.connect(self.show_current_url_dialog)
 
         # Direct tab switching
         for i in range(1, 9):
             shortcut_num = QShortcut(QKeySequence(f"Ctrl+{i}"), self)
             shortcut_num.activated.connect(lambda idx=i - 1: self.switch_to_tab(idx))
+
+    def open_quick_commands_palette(self) -> None:
+        self.quick_palette.open_palette()
 
     def current_browser(self) -> Optional[CustomWebEngineView]:
         widget = self.tab_widget.currentWidget()
@@ -2449,8 +3813,25 @@ class MainWindow(QMainWindow):
             return widget
         return None
 
-    def add_tab(self, url: Optional[QUrl] = None, title: str = "New Tab", icon: Optional[QIcon] = None) -> int:
-        view = CustomWebEngineView(self.profile_manager.web_engine_profile, self)
+    def add_tab(self, url: Optional[QUrl] = None, title: str = "New Tab", icon: Optional[QIcon] = None, incognito: bool = False) -> int:
+        if incognito:
+            profile = QWebEngineProfile(self)
+            try:
+                profile.setOffTheRecord(True)
+            except Exception:
+                pass
+            profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.NoPersistentCookies)
+            try:
+                profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
+            except Exception:
+                pass
+            profile.setCachePath("")
+            profile.setPersistentStoragePath("")
+        else:
+            profile = self.profile_manager.web_engine_profile
+
+        view = CustomWebEngineView(profile, self, self)
+        view.is_incognito = incognito
         tab_icon = icon if icon else self.default_icon
 
         script = QWebEngineScript()
@@ -2477,11 +3858,63 @@ class MainWindow(QMainWindow):
         self.update_nav_buttons()
         return index
 
+    def open_local_file(self, path: str) -> None:
+        """Open a local file path or file:// URI in a new tab (HTML or PDF supported)."""
+        if not path:
+            return
+        # Normalize file:// URIs
+        if path.startswith("file://"):
+            q = QUrl(path)
+        else:
+            # If it's a local path, convert to file URL; otherwise try as generic URL
+            if os.path.exists(path):
+                q = QUrl.fromLocalFile(os.path.abspath(path))
+            else:
+                q = QUrl(path)
+
+        # If the file is a PDF or .pdf extension, just load it into the view
+        try:
+            lower = path.lower()
+            if lower.endswith('.pdf'):
+                self.add_tab(url=q, title=os.path.basename(path))
+                return
+        except Exception:
+            pass
+
+        # Default: open as HTML or a generic url
+        self.add_tab(url=q, title=os.path.basename(path))
+
+    def dragEnterEvent(self, event: QEvent) -> None:  # type: ignore[override]
+        md = event.mimeData()
+        if md and md.hasUrls():
+            event.acceptProposedAction()
+        else:
+            super().dragEnterEvent(event)
+
+    def dropEvent(self, event: QEvent) -> None:  # type: ignore[override]
+        md = event.mimeData()
+        if md and md.hasUrls():
+            for qurl in md.urls():
+                # Prefer local file paths
+                local = qurl.toLocalFile()
+                if local:
+                    self.open_local_file(local)
+                else:
+                    text = qurl.toString()
+                    if text.startswith('file://'):
+                        self.open_local_file(text)
+                    else:
+                        # regular URL
+                        self.add_tab(url=QUrl(text))
+            event.acceptProposedAction()
+        else:
+            super().dropEvent(event)
+
     def _on_url_changed(self, view: CustomWebEngineView, url: QUrl) -> None:
         url_str = url.toString()
         if url_str and not url_str.startswith("about:"):
             view.custom_history_stack.append(url_str)
-            if self.profile_manager.data_manager:
+            if self.profile_manager.data_manager and not getattr(view, "is_incognito", False):
                 self.profile_manager.data_manager.add_history_entry(view.title(), url_str)
 
         self.ext_manager.notify_page_load(view, url)
@@ -2564,7 +3997,7 @@ class MainWindow(QMainWindow):
         if 0 <= active_idx < self.tab_widget.count():
             self.tab_widget.setCurrentIndex(active_idx)
 
-        self.statusBar().showMessage("Restored previous session successfully.", 3000)
+        self._show_toast("Restored previous session successfully.")
         return True
 
     def open_profile_dialog(self) -> None:
@@ -2610,7 +4043,7 @@ class MainWindow(QMainWindow):
                 "created": datetime.now().isoformat()
             })
             self.profile_manager.data_manager.save_bookmarks(bookmarks)
-            self.statusBar().showMessage(f"Bookmarked: {browser.title()}", 3000)
+            self._show_toast(f"Bookmarked: {browser.title()}")
 
     def bookmark_all_tabs(self) -> None:
         if not self.profile_manager.data_manager:
@@ -2625,7 +4058,7 @@ class MainWindow(QMainWindow):
                     "created": datetime.now().isoformat()
                 })
         self.profile_manager.data_manager.save_bookmarks(bookmarks)
-        self.statusBar().showMessage("Bookmarked all active tabs!", 3000)
+        self._show_toast("Bookmarked all active tabs!")
 
     def open_downloads_dialog(self) -> None:
         self.downloads_dialog.show()
@@ -2636,15 +4069,77 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
     def _on_download_requested(self, item: QWebEngineDownloadRequest) -> None:
+        default_dir = item.downloadDirectory()
+        default_filename = item.downloadFileName()
+        default_path = os.path.join(default_dir, default_filename)
+
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Download As...",
+            default_path,
+            "All Files (*)"
+        )
+
+        if not path:
+            item.cancel()
+            return
+
+        save_dir = os.path.dirname(path)
+        save_filename = os.path.basename(path)
+
+        item.setDownloadDirectory(save_dir)
+        item.setDownloadFileName(save_filename)
         item.accept()
+
         if self.profile_manager.data_manager:
             self.profile_manager.data_manager.add_download_entry(
-                item.downloadFileName(),
-                item.downloadDirectory(),
+                save_filename,
+                save_dir,
                 item.totalBytes()
             )
+
         self.downloads_dialog.add_download(item)
         self.open_downloads_dialog()
+
+    def translate_current_page(self) -> None:
+        browser = self.current_browser()
+        if not browser:
+            return
+
+        current_url = browser.url().toString()
+        if not current_url or current_url.startswith("about:") or current_url.startswith("file:"):
+            QMessageBox.warning(self, "Translation Error", "Cannot translate local or blank pages.")
+            return
+
+        encoded_url = QUrl.toPercentEncoding(current_url).data().decode("utf-8")
+        translate_url = f"https://translate.google.com/translate?sl=auto&tl=en&u={encoded_url}"
+        browser.load(QUrl(translate_url))
+
+    def show_current_url_dialog(self) -> None:
+        browser = self.current_browser()
+        url_text = browser.url().toString() if browser else "about:blank"
+
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Current Page URL")
+        dlg.setText(f"<b>Current Page URL:</b><br><br><a href='{url_text}'>{url_text}</a>")
+        dlg.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        dlg.setStyleSheet("""
+            QMessageBox {
+                background-color: #18181B;
+                color: #F4F4F5;
+            }
+            QLabel {
+                color: #F4F4F5;
+            }
+            QPushButton {
+                background: #6366F1;
+                color: white;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+        """)
+        dlg.exec()
 
     def _change_ad_block_mode(self, mode: AdBlockMode) -> None:
         self.ad_blocker.set_mode(mode)
@@ -2720,8 +4215,9 @@ class MainWindow(QMainWindow):
     def _get_initial_url(self) -> QUrl:
         settings = self.profile_manager.data_manager.load_settings() if self.profile_manager.data_manager else {}
         home = settings.get("homepage", HOME_PAGE_FILE)
-        if os.path.exists(home):
-            return QUrl.fromLocalFile(os.path.abspath(home))
+        home_path = Path(str(home))
+        if home_path.exists():
+            return QUrl.fromLocalFile(str(home_path.resolve()))
         engine = settings.get("search_engine", DEFAULT_ENGINE)
         return QUrl(SEARCH_ENGINES.get(engine, SEARCH_ENGINES[DEFAULT_ENGINE]).format(""))
 
@@ -2765,8 +4261,9 @@ class MainWindow(QMainWindow):
         return QUrl(template.format(QUrl.toPercentEncoding(input_text).data().decode("utf-8")))
 
     def open_help(self) -> None:
-        if os.path.exists(HELP_PAGE_FILE):
-            self.add_tab(url=QUrl.fromLocalFile(os.path.abspath(HELP_PAGE_FILE)), title="Help", icon=self.help_icon)
+        help_path = Path(HELP_PAGE_FILE)
+        if help_path.exists():
+            self.add_tab(url=QUrl.fromLocalFile(str(help_path.resolve())), title="Help", icon=self.help_icon)
 
     def _hard_reload(self) -> None:
         browser = self.current_browser()
@@ -2800,6 +4297,7 @@ class MainWindow(QMainWindow):
 
 
 def main() -> None:
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL, True)
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
@@ -2807,6 +4305,26 @@ def main() -> None:
     
     window = MainWindow()
     window.show()
+    # If the OS launched Zenith with file paths or file:// URIs (double-click or default browser), open them
+    for arg in sys.argv[1:]:
+        try:
+            if not arg:
+                continue
+            # Raw file:// URI
+            if arg.startswith("file://"):
+                q = QUrl(arg)
+                window.add_tab(url=q, title=os.path.basename(q.path()))
+                continue
+            # Local filesystem path
+            if os.path.exists(arg):
+                window.open_local_file(arg)
+                continue
+            # If it looks like a URL, try to open it
+            if arg.startswith("http://") or arg.startswith("https://"):
+                window.add_tab(url=QUrl(arg))
+        except Exception:
+            # ignore any malformed args
+            pass
     sys.exit(app.exec())
 
 
