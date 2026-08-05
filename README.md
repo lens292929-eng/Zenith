@@ -163,10 +163,6 @@ Switch instantly using:
 
 Zenith ships with several built-in tools.
 
-### 📺 YouTube Shorts Blocker
-
-Removes Shorts distractions.
-
 ### 🌙 Dark Reader Lite
 
 Automatically darkens bright websites.
