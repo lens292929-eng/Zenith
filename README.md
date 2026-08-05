@@ -13,7 +13,7 @@
 
 Some antivirus programs may warn about Zenith because it is a new, unsigned application packaged with PyInstaller. This is a false positive.
 
-The source code is available in this repository and releases include SHA256 checksums.
+The source code is available in this repository, I have nothing to hide.
 
 ## 🌐 About Zenith
 
