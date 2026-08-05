@@ -145,13 +145,20 @@ Future ideas:
 - [ ] Custom themes
 - [ ] Automatic updates
 
----
 
 ## 📸 Screenshots
 
 <img src="zenith.png">
----
 
-<p align="center">
-  <b>Zenith — reach the web faster.</b>
-</p>
+
+## Credits
+
+Zenith Protection uses filter rules from:
+
+uBlockOrigin/uAssets  
+https://github.com/uBlockOrigin/uAssets
+
+Specifically:
+- filters/filters.txt
+
+Huge thanks to the uBlock Origin contributors for maintaining these filters and helping keep the web cleaner.
