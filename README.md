@@ -1,3 +1,9 @@
+![Python](https://img.shields.io/badge/Python-3.13-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows-blue)
+![License](https://img.shields.io/github/license/USERNAME/Zenith)
+![Release](https://img.shields.io/github/v/release/USERNAME/Zenith)
+![Downloads](https://img.shields.io/github/downloads/USERNAME/Zenith/total)
+
 # ⚡ Zenith Browser
 
 <p align="center">
@@ -5,52 +11,88 @@
 </p>
 
 <p align="center">
-  No clutter. No forced UI. Just browse the web your way.
+  No clutter. No forced UI. Just press a key and browse.
+</p>
+
+<p align="center">
+  <img src="zenith.png" width="900">
 </p>
 
 ---
-## Windows Defender warning
 
-Some antivirus programs may warn about Zenith because it is a new, unsigned application packaged with PyInstaller. This is a false positive.
+## Why?
 
-The source code is available in this repository, I have nothing to hide.
+Most browsers revolve around the address bar.
 
-## 🌐 About Zenith
+Zenith revolves around **Spotlight**.
 
-Zenith is a lightweight, keyboard-driven browser built with **PyQt6**.
+Instead of moving your mouse across dozens of buttons, just press **Alt + T**, type what you want, and keep going.
 
-Traditional browsers are built around the URL bar. Zenith takes a different approach: use the built-in **Spotlight** system to navigate, search, and control your browser without breaking your workflow.
+Search.
 
-Press a key. Type what you want. Go.
+Open websites.
+
+Switch profiles.
+
+Run browser commands.
+
+Without breaking your flow.
 
 ---
 
-## ✨ Features
+## ⚠ Windows Defender Warning
 
-### ⚡ Spotlight Navigation
+Zenith is packaged with PyInstaller and is currently **unsigned**.
 
-Zenith's central command system lets you instantly search or open websites.
+Because of this, Windows Defender or SmartScreen may display a warning the first time you run it.
+
+That's expected.
+
+The entire source code is available here on GitHub if you'd like to see exactly what Zenith does.
+
+---
+
+# ✨ Features
+
+## ⚡ Spotlight Navigation
+
+Spotlight is the heart of Zenith.
+
+Type almost anything.
 
 Examples:
 
+```text
 yt cats
+```
 
-→ Search YouTube for cats
+→ Search YouTube
 
-
+```text
 gh pyqt6
+```
 
-→ Search GitHub for PyQt6 projects
+→ Search GitHub
 
-→ Search Google for Python tutorials
+```text
+g python tutorial
+```
+
+→ Search Google
+
+```text
+github.com
+```
+
+→ Open the website directly
 
 Supported prefixes:
 
-| Prefix | Service |
-|--------|---------|
+| Prefix | Search Engine |
+|---------|---------------|
 | `g` | Google |
 | `d` | DuckDuckGo |
-| `b` | Brave Search |
+| `b` | Brave |
 | `k` | Kagi |
 | `gh` | GitHub |
 | `yt` | YouTube |
@@ -58,78 +100,116 @@ Supported prefixes:
 
 ---
 
-## ⌨️ Keyboard First
+## ⌨ Keyboard First
 
-Zenith is designed to be used without constantly reaching for the mouse.
-
-Popular shortcuts:
+Zenith was designed so your keyboard does most of the work.
 
 | Action | Shortcut |
-|--------|----------|
-| Open Spotlight | `Alt + T` |
+|---------|----------|
+| Spotlight | `Alt + T` |
+| Spotlight | `Ctrl + L` |
+| Spotlight | `Ctrl + K` |
 | New Tab | `Ctrl + T` |
 | Close Tab | `Ctrl + W` |
-| Restore Tab | `Ctrl + Shift + T` |
-| Switch Tabs | `Ctrl + Tab` |
+| Restore Closed Tab | `Ctrl + Shift + T` |
+| Next Tab | `Ctrl + Tab` |
+| Previous Tab | `Ctrl + Shift + Tab` |
 | Switch Profiles | `Ctrl + Shift + P` |
+| Downloads | `Ctrl + J` |
+| Bookmarks | `Ctrl + D` |
 | Settings | `Ctrl + ,` |
+| Help | `Ctrl + H` |
+
+---
+
+## 🚀 Highlights
+
+Zenith includes:
+
+- ⚡ Spotlight navigation
+- 👤 Multiple browser profiles
+- 🍪 Persistent cookies & login sessions
+- 💾 Session restore
+- 📥 Download manager
+- ⭐ Bookmarks
+- 📜 Browsing history
+- 🛡 Built-in ad blocker
+- 🔍 Inspect Element
+- 🎨 Theme Maker
+- ✂ CSS Element Remover
+- 🌙 Dark Reader Lite
+- 🧩 Extension system
 
 ---
 
 ## 👤 Profiles
 
-Keep separate browsing environments with Zenith profiles.
+Separate work from personal browsing.
 
-Each profile can have its own:
-- browsing data
-- settings
-- preferences
+Each profile has its own:
 
-Switch instantly with: CTRL + SHIFT + P
+- Cookies
+- History
+- Downloads
+- Settings
+- Browser data
+- Session
 
+Switch instantly using:
+
+`Ctrl + Shift + P`
 
 ---
 
 ## 🧩 Built-in Extensions
 
-Zenith includes modular built-in tools:
+Zenith ships with several built-in tools.
 
 ### 📺 YouTube Shorts Blocker
-Removes Shorts distractions and redirects short content into normal viewing.
+
+Removes Shorts distractions.
 
 ### 🌙 Dark Reader Lite
-Applies dark styling to bright websites.
 
-### 📖 Distraction-Free Reader Mode
-Removes unnecessary page clutter for focused reading.
+Automatically darkens bright websites.
+
+### 📖 Reader Mode
+
+Focus on the content.
+
+### 🎨 Theme Maker
+
+Customize Zenith's appearance.
+
+### ✂ CSS Element Remover
+
+Hide annoying page elements permanently.
 
 ### 🧹 Storage Cleaner
-Quickly clear browser data and storage.
+
+Clear browser data whenever you want.
 
 ---
 
-## 🛡️ Privacy & Control
+## 🛡 Privacy
 
-Zenith was built with one goal:
+Zenith was built around one simple idea:
 
-**Know what your browser is doing.**
+> **Your browser should work for you.**
 
-No unnecessary features.
 No forced accounts.
-No extra clutter.
 
-You choose how your browser works.
+No unnecessary UI.
+
+No features you didn't ask for.
 
 ---
 
-## 🛠️ Built With
+## 🛠 Built With
 
 - Python
 - PyQt6
-- QtWebEngine
-
----
-
+- Qt WebEngine
 
 No Python installation required.
 
@@ -137,28 +217,35 @@ No Python installation required.
 
 ## 🚧 Roadmap
 
-Future ideas:
-
-- [ ] Linux build
+- [ ] Linux support
+- [ ] macOS support
 - [ ] Better extension API
-- [ ] More Spotlight commands
-- [ ] Custom themes
 - [ ] Automatic updates
+- [ ] More Spotlight commands
+- [ ] Workspaces
+- [ ] Pinned tabs
+- [ ] Vertical tabs
+- [ ] Password manager
+- [ ] Sync
 
+---
 
-## 📸 Screenshots
+## 📸 Screenshot
 
+<p align="center">
 <img src="zenith.png">
+</p>
 
+---
 
-## Credits
+## ❤️ Credits
 
-Zenith Protection uses filter rules from:
+Zenith Protection uses filter lists from **uBlock Origin**.
 
-uBlockOrigin/uAssets  
 https://github.com/uBlockOrigin/uAssets
 
 Specifically:
-- filters/filters.txt
 
-Huge thanks to the uBlock Origin contributors for maintaining these filters and helping keep the web cleaner.
+- `filters/filters.txt`
+
+Huge thanks to the uBlock Origin contributors for helping keep the web cleaner.
